@@ -25,7 +25,7 @@ class TrainingArguments(PRMConfig):
     cache_dir: Optional[str] = field(default=None)
     max_length: int = field(default=128000)
     max_completion_length: int = field(default=8000)
-    fix_llm: bool = field(default=False)
+    fix_llm: bool = field(default=False)#如果为true, 将冻结大模型LLM中除最后一层之外的所有权重，仅训练最后一层。
 
 
 def safe_save_model_for_hf_trainer(
