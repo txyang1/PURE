@@ -35,7 +35,7 @@ def safe_save_model_for_hf_trainer(
     """Collects the state dict and dump to disk."""
     state_dict = trainer.model.state_dict()
 
-    if trainer.args.should_save and trainer.args.local_rank == 0:
+    if trainer.args.should_save and trainer.args.local_rank == 0:#只让主进程 local_rank == 0 保存模型，以避免不同进程重复写文件。
         trainer._save(output_dir, state_dict=state_dict)
 
 
@@ -74,7 +74,7 @@ def train():
         use_cache = False,
     )
 
-    # freeze llm except last layer if needed
+    # freeze llm except last layer if needed#选择是否冻结
     if training_args.fix_llm:
         model.model.requires_grad_(False)
                 
