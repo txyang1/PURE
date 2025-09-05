@@ -78,7 +78,7 @@ def prepare_data(data_name, args):
     # get out_file name
     dt_string = datetime.now().strftime("%m-%d_%H-%M")
     model_name = "/".join(args.model_name_or_path.split("/")[-2:])
-    out_file_prefix = f"{args.split}_{args.prompt_type}_{args.num_test_sample}_seed{args.seed}_t{args.temperature}"
+    out_file_prefix = f"{args.split}_{args.prompt_type}_{args.num_test_sample}_seed{args.seed}_t{args.temperature}_k{args.n_sampling}"
     output_dir = args.output_dir
     out_file = f"{output_dir}/{data_name}/{out_file_prefix}_s{args.start}_e{args.end}.jsonl"
     os.makedirs(f"{output_dir}/{data_name}", exist_ok=True)
@@ -112,7 +112,7 @@ def setup(args):
     need_eval_data_list = []
     if not args.overwrite:
         for data_name in data_list:
-            out_prefix = f"{args.split}_{args.prompt_type}_{args.num_test_sample}_seed{args.seed}_t{args.temperature}"
+            out_prefix = f"{args.split}_{args.prompt_type}_{args.num_test_sample}_seed{args.seed}_t{args.temperature}_k{args.n_sampling}"
             out_file =  f"{args.output_dir}/{data_name}/{out_prefix}_s{args.start}_e{args.end}.jsonl"
             out_metric_json = out_file.replace(".jsonl", f"_metrics.json")
             
@@ -289,6 +289,7 @@ def main(llm, tokenizer, data_name, args):
                     max_tokens=args.max_tokens_per_call,
                     n=1,
                     stop=stop_words,
+                    seed=args.seed,  # ← 新增
                     stop_token_ids=(
                         [151645, 151643]
                         if "qwen2" in args.model_name_or_path.lower()
@@ -400,13 +401,23 @@ def main(llm, tokenizer, data_name, args):
         all_samples.append(sample)
 
     # add processed samples
-    all_samples.extend(processed_samples)
+    # all_samples.extend(processed_samples)
+    # all_samples, result_json = evaluate(
+    #     samples=all_samples,
+    #     data_name=data_name,
+    #     prompt_type=args.prompt_type,
+    #     execute=True,
+    # )
     all_samples, result_json = evaluate(
-        samples=all_samples,
-        data_name=data_name,
-        prompt_type=args.prompt_type,
-        execute=True,
-    )
+    samples=all_samples,
+    data_name=data_name,
+    prompt_type=args.prompt_type,
+    execute=True,
+    pass_k=args.n_sampling,   # ← 关键
+    unbiased=False,           # 想用无偏估计就设 True
+    dedup=True,               # 建议开，避免重复样本影响
+)
+
 
     # save outputs
     if len(processed_samples) < len(all_samples) and args.save_outputs:
